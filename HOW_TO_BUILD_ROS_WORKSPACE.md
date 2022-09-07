@@ -91,6 +91,9 @@ Run
 
 ## Jalankan
 
+Jika stuck saat menjalanakan offb_node, fix dengan :
+QGroundControl >> Setting >> Parameters >> COM_RCL_EXCEPT >> centang mission dan offboard
+
 contoh
 
 ```sh

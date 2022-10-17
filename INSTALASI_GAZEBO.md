@@ -1,5 +1,8 @@
 # Installation
 
+What will you learn here :
+* Installing Gazebo
+
 [Source](https://docs.px4.io/main/en/simulation/gazebo.html)
 
 Prerequisites :

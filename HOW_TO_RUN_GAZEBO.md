@@ -1,5 +1,8 @@
 # Running Gazebo
 
+What will you learn here :
+* Running Gazebo Simulation
+
 Prerequisites :
 * [QGroundControl](https://docs.qgroundcontrol.com/master/en/getting_started/download_and_install.html)
 * [Instalasi Gazebo](INSTALASI_GAZEBO.md)
@@ -20,3 +23,5 @@ Prerequisites :
 Tidak perlu ``` roscore ``` lagi sebab sudah termasuk dalam ``` roslaunch ```
 
 ## Jalankan Node Project
+
+Contoh menjalankan node ada di [sini](https://github.com/FahrulID/catatan_belajar_ros/blob/main/HOW_TO_BUILD_ROS_WORKSPACE.md)

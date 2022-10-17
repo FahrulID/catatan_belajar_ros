@@ -1,5 +1,10 @@
 # How To Build
 
+What will you learn here :
+* Making workspace
+* Making node
+* Building node
+
 {var} : Change with own var
 
 Prerequisites :
@@ -75,18 +80,19 @@ untuk cpp, apabila ada error saat include header, tambahkan dua baris ini pada p
     "/opt/ros/noetic/include/**",
     "/usr/include/**"
 
+## Source setup.bash
+Jangan lupa Source setup executable terlebih dahulu sebelum dibuild
+
+```sh
+    source devel/setup.bash
+```
+
 ## Ke folder catkin_ws
 
 Run
 
 ```sh
     catkin_make || catkin build
-```
-
-## Source setup.bash
-
-```sh
-    source devel/setup.bash
 ```
 
 ## Jalankan

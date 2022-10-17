@@ -80,13 +80,6 @@ untuk cpp, apabila ada error saat include header, tambahkan dua baris ini pada p
     "/opt/ros/noetic/include/**",
     "/usr/include/**"
 
-## Source setup.bash
-Jangan lupa Source setup executable terlebih dahulu sebelum dibuild
-
-```sh
-    source devel/setup.bash
-```
-
 ## Ke folder catkin_ws
 
 Run
@@ -96,6 +89,14 @@ Run
 ```
 
 ## Jalankan
+
+
+### Source setup.bash
+Jangan lupa Source setup executable terlebih dahulu sebelum dibuild
+
+```sh
+    source devel/setup.bash
+```
 
 Jika stuck saat menjalanakan offb_node, fix dengan :
 QGroundControl >> Setting >> Parameters >> COM_RCL_EXCEPT >> centang mission dan offboard

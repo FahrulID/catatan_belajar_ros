@@ -15,27 +15,27 @@ Prerequisites :
 ## Buat workspace 
 
 ```sh
-    mkdir -p catkin_ws/src
-    cd catkin_ws/src
+mkdir -p catkin_ws/src
+cd catkin_ws/src
 ```
 
 ## Buat Package
 
 ```sh
-    catkin_create_pkg {nama_package} std_msgs rospy roscpp
+catkin_create_pkg {nama_package} std_msgs rospy roscpp
 ```
 
 contoh :
 
 ```sh
-    catkin_create_pkg {nama_package} geometry_msgs mavros_msgs roscpp rospy std_msgs
+catkin_create_pkg {nama_package} geometry_msgs mavros_msgs roscpp rospy std_msgs
 ```
 
 ## Buat Node 
 
 ```sh
-    cd {nama_package}/src
-    touch {nama_node}.cpp || touch {nama_node}.py
+cd {nama_package}/src
+touch {nama_node}.cpp || touch {nama_node}.py
 ```
 
 ## Isi Node
@@ -48,7 +48,7 @@ Misal pakai di atas, sesuaikan node dengan line >> ros::init(argc, argv, "offb_n
 
 ### Untuk Python
 
-```sh
+```
     catkin_package(
 	    CATKIN_DEPENDS
 	    roscpp 
@@ -66,7 +66,7 @@ Misal pakai di atas, sesuaikan node dengan line >> ros::init(argc, argv, "offb_n
 
 ### Untuk CPP
 
-```sh
+```
     add_executable({nama_node} src/{nama_node}.cpp)
 	
     ##
@@ -85,7 +85,7 @@ untuk cpp, apabila ada error saat include header, tambahkan dua baris ini pada p
 Run
 
 ```sh
-    catkin_make || catkin build
+catkin_make || catkin build
 ```
 
 ## Jalankan
@@ -95,7 +95,7 @@ Run
 Jangan lupa Source setup executable terlebih dahulu sebelum dibuild
 
 ```sh
-    source devel/setup.bash
+source devel/setup.bash
 ```
 
 Jika stuck saat menjalanakan offb_node, fix dengan :
@@ -104,5 +104,5 @@ QGroundControl >> Setting >> Parameters >> COM_RCL_EXCEPT >> centang mission dan
 contoh
 
 ```sh
-    rosrun {nama_package} {nama_node}
+rosrun {nama_package} {nama_node}
 ```

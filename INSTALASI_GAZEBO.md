@@ -11,13 +11,13 @@ Prerequisites :
 ## 1.1 Download PX4 Source Code
 
 ```sh
-    git clone https://github.com/PX4/PX4-Autopilot.git --recursive
+git clone https://github.com/PX4/PX4-Autopilot.git --recursive
 ```
 
 ## 1.2 Run Ubuntu.sh
 
 ```sh
-    bash ./PX4-Autopilot/Tools/setup/ubuntu.sh
+bash ./PX4-Autopilot/Tools/setup/ubuntu.sh
 ```
 
 # Running
@@ -25,6 +25,6 @@ Prerequisites :
 ## 1.1 
 
 ```sh
-    cd /path/to/PX4-Autopilot
-    make px4_sitl gazebo
+cd /path/to/PX4-Autopilot
+make px4_sitl gazebo
 ``

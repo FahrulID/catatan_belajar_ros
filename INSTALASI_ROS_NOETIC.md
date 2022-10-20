@@ -2,41 +2,40 @@
 
 ## 1.2 Setup sources.ist
 ```sh
-    sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 ```
 
 ## 1.3 Set up keys
 ```sh
-    sudo apt install curl # if you haven't already installed curl
-    curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+sudo apt install curl # if you haven't already installed curl
+curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
 ```
 
 ## 1.4 Instalasi
 
 ```sh
-    sudo apt update
-    sudo apt install ros-noetic-desktop-full
+sudo apt update
+sudo apt install ros-noetic-desktop-full
 ```
 
 ## 1.5 Setup environment
 
 ```sh
-    source /opt/ros/noetic/setup.bash
-
-    echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
-    source ~/.bashrc
+source /opt/ros/noetic/setup.bash
+echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+source ~/.bashrc
 ```
 
 ## 1.6 Dependensi
 
 ```sh
-    sudo apt install python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
+sudo apt install python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
 ```
 
 ### 1.6.1 Initialisasi Rosdep
 
 ```sh
-    sudo apt install python3-rosdep
-    sudo rosdep init
-    rosdep update
+sudo apt install python3-rosdep
+sudo rosdep init
+rosdep update
 ```

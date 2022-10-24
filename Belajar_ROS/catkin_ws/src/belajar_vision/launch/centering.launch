@@ -1,0 +1,14 @@
+<launch>
+  <node
+    pkg="belajar_vision"
+    type="centering_pub.py"
+    name="centering_pub"
+    output="screen"
+  />
+  <node
+    pkg="belajar_vision"
+    type="centering_sub.py"
+    name="centering_sub"
+    output="screen"
+  />
+</launch>

@@ -1,0 +1,14 @@
+<launch>
+  <node
+    pkg="belajar_vision"
+    type="image_pub.py"
+    name="image_pub"
+    output="screen"
+  />
+  <node
+    pkg="belajar_vision"
+    type="image_sub.py"
+    name="image_sub"
+    output="screen"
+  />
+</launch>

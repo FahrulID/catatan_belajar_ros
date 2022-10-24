@@ -1,0 +1,8 @@
+<launch>
+  <node
+    pkg="belajar_vision"
+    type="tes.py"
+    name="tes"
+    output="screen"
+  />
+</launch>

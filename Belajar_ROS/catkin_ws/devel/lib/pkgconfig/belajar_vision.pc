@@ -1,0 +1,8 @@
+prefix=/home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/devel
+
+Name: belajar_vision
+Description: Description of belajar_vision
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

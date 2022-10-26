@@ -9,7 +9,7 @@
 import rospy # Python library for ROS
 from std_msgs.msg import Int32MultiArray
 from std_msgs.msg import Bool
-from std_msgs.msg import Float32
+# from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import Pose
 from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 import cv2 # OpenCV library
@@ -184,7 +184,7 @@ def run():
     rospy.Subscriber('hsv_pub', Int32MultiArray, hsv_sub)
     rospy.Subscriber('scan_pub', Bool, scan)
     center_pub = rospy.Publisher('center_pub', Pose, queue_size=10)
-    distance_pub = rospy.Publisher('distance_pub', Float32, queue_size=10)
+    distance_pub = rospy.Publisher('distance_pub', Pose, queue_size=10)
     iscentered_pub = rospy.Publisher('iscentered_pub', Bool, queue_size=10)
         
     # Go through the loop 10 times per second
@@ -253,7 +253,11 @@ def run():
                 center.position.x = (cX - w/2) / abs((cX - w/2)) if (cX - w/2 != 0) else cX - w/2
                 center.position.y = (cY - h/2) / abs((cY - h/2)) if (cY - h/2 != 0) else cY - h/2
                 center_pub.publish(center)
-                distance_pub.publish(d)
+                distance = Pose()
+                distance.position.x = cX - w/2
+                distance.position.y = cY - h/2
+                distance.position.z = d
+                distance_pub.publish(distance)
                 cv2.line(result, (int(w/2), int(h/2)), (int(cX), int(cY)), (127, 255, 0), 1)
                 cv2.line(frame, (int(w/2), int(h/2)), (int(cX), int(cY)), (127, 255, 0), 1)
 

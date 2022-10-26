@@ -13,7 +13,7 @@
 #include <mavros_msgs/State.h>
 #include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Bool.h>
-#include <std_msgs/Float32.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <math.h>
 #include "../include/belajar_ros/pid.hpp"
 
@@ -45,8 +45,6 @@ PID pid_z(0.03125, 1, -1, 0.5, 0.001, 0.001);
 
 PID pid_center_x(0.03125, 1, -1, 0.65, 0.001, 0.05);
 PID pid_center_y(0.03125, 1, -1, 0.65, 0.001, 0.05);
-PID pid_smooth_x(0.03125, 1, -1, 0.8, 0.001, 0.05);
-PID pid_smooth_y(0.03125, 1, -1, 0.8, 0.001, 0.05);
 
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
@@ -58,8 +56,8 @@ void center_pub_cb(const geometry_msgs::Pose::ConstPtr& msg){
     center_pos = *msg;
 }
 
-std_msgs::Float32 distance_to_center;
-void distance_pub_cb(const std_msgs::Float32::ConstPtr& msg){
+geometry_msgs::Pose distance_to_center;
+void distance_pub_cb(const geometry_msgs::Pose::ConstPtr& msg){
     distance_to_center = *msg;
 }
 
@@ -90,7 +88,7 @@ void goTakeOff(ros::Publisher cmd_pub, ros::Rate rate)
         ros::spinOnce();
         rate.sleep();
 
-        if(!near_equal(current_pose.pose.position.z, 6, 0.2))
+        if(!near_equal(current_pose.pose.position.z, 6, 0.3))
         {
             vel.linear.x = pid_x.calculate(current_pose.pose.position.x, current_pose.pose.position.x);
             vel.linear.y = pid_y.calculate(current_pose.pose.position.y, current_pose.pose.position.y);
@@ -127,7 +125,7 @@ void goLand(ros::Publisher cmd_pub, ros::Rate rate)
     {
         ros::spinOnce();
         rate.sleep();
-        if(!near_equal(current_pose.pose.position.x, 0, 0.2) || !near_equal(current_pose.pose.position.y, 0, 0.2))
+        if(!near_equal(current_pose.pose.position.x, 0, 0.3) || !near_equal(current_pose.pose.position.y, 0, 0.3))
         {
             vel.linear.x = pid_x.calculate(0, current_pose.pose.position.x);
             vel.linear.y = pid_y.calculate(0, current_pose.pose.position.y);
@@ -151,7 +149,7 @@ void goLand(ros::Publisher cmd_pub, ros::Rate rate)
             continue;
         }
 
-        if(!near_equal(current_pose.pose.position.z, 0, 0.2))
+        if(!near_equal(current_pose.pose.position.z, 0, 0.3))
         {
             vel.linear.x = pid_x.calculate(current_pose.pose.position.x, current_pose.pose.position.x);
             vel.linear.y = pid_y.calculate(current_pose.pose.position.y, current_pose.pose.position.y);
@@ -227,8 +225,8 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, r
 
                 if(centering && !centered)
                 {
-                    float center_x = (center_pos.position.y * distance_to_center.data / 100);
-                    float center_y = (center_pos.position.x * distance_to_center.data / 100);
+                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 100);
+                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 100);
                     vel.linear.x = pid_center_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
                     vel.linear.y = pid_center_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
                     vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
@@ -241,15 +239,12 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, r
 
                     ROS_INFO("Centering x: %f y:%f vel x:%f, y:%f", current_pose.pose.position.x - center_pos.position.x, current_pose.pose.position.y - center_pos.position.y, center_x, center_y);
                 } else if(centered) {
-                    if(!iscentered.data)
-                    {
-                        float center_x = (center_pos.position.y * distance_to_center.data / 100);
-                        float center_y = (center_pos.position.x * distance_to_center.data / 100);
-                        vel.linear.x = pid_smooth_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
-                        vel.linear.y = pid_smooth_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
-                        vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
-                    }
-                    
+                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 50);
+                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 50);
+                    vel.linear.x = pid_center_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
+                    vel.linear.y = pid_center_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
+                    vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
+
                     if(misi.is_zero())
                     {
                         misi = ros::Time::now();
@@ -306,7 +301,7 @@ int main(int argc, char **argv)
             ("center_pub", 10, center_pub_cb);
     ros::Subscriber iscentered_pub = nh.subscribe<std_msgs::Bool>
             ("iscentered_pub", 10, iscentered_pub_cb);
-    ros::Subscriber distance_pub = nh.subscribe<std_msgs::Float32>
+    ros::Subscriber distance_pub = nh.subscribe<geometry_msgs::Pose>
             ("distance_pub", 10, distance_pub_cb);
 
     //the setpoint publishing rate MUST be faster than 2Hz
@@ -326,7 +321,7 @@ int main(int argc, char **argv)
 
     //send a few setpoints before starting
     ROS_INFO("Sending few setpoints before start");
-    for(int i = 10; ros::ok() && i > 0; --i){
+    for(int i = 100; ros::ok() && i > 0; --i){
         local_pos_pub.publish(pose);
         ros::spinOnce();
         rate.sleep();

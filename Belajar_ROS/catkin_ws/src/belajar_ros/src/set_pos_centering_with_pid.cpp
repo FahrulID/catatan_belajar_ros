@@ -61,11 +61,6 @@ void distance_pub_cb(const geometry_msgs::Pose::ConstPtr& msg){
     distance_to_center = *msg;
 }
 
-std_msgs::Bool iscentered;
-void iscentered_pub_cb(const std_msgs::Bool::ConstPtr& msg){
-    iscentered = *msg;
-}
-
 geometry_msgs::PoseStamped current_pose;
 void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
@@ -83,11 +78,13 @@ void goTakeOff(ros::Publisher cmd_pub, ros::Rate rate)
     bool tookOff = false;
     ros::Time takingoff;
 
+    // Looping hingga took off
     while(ros::ok() && !tookOff)
     {
         ros::spinOnce();
         rate.sleep();
 
+        // Jika belum mendekati z => 6 maka gerak ke z => 6
         if(!near_equal(current_pose.pose.position.z, 6, 0.3))
         {
             vel.linear.x = pid_x.calculate(current_pose.pose.position.x, current_pose.pose.position.x);
@@ -98,6 +95,7 @@ void goTakeOff(ros::Publisher cmd_pub, ros::Rate rate)
             continue;
         }
 
+        // Mulai perhitungan waktu
         if(takingoff.is_zero())
         {
             takingoff = ros::Time::now();
@@ -111,6 +109,7 @@ void goTakeOff(ros::Publisher cmd_pub, ros::Rate rate)
             continue;
         }
 
+        // Jika sudah melewati 5 detik maka sudah bisa dianggap stabil dan sudah take off
         tookOff = true;
     }
 }
@@ -121,21 +120,25 @@ void goLand(ros::Publisher cmd_pub, ros::Rate rate)
     geometry_msgs::Twist vel;
     bool landed = false;
 
+    // Looping hingga landed
     while(ros::ok() && !landed)
     {
         ros::spinOnce();
         rate.sleep();
+
+        // Jika belum mendekati posisi x,y => 0
         if(!near_equal(current_pose.pose.position.x, 0, 0.3) || !near_equal(current_pose.pose.position.y, 0, 0.3))
         {
             vel.linear.x = pid_x.calculate(0, current_pose.pose.position.x);
             vel.linear.y = pid_y.calculate(0, current_pose.pose.position.y);
             vel.linear.z = pid_z.calculate(current_pose.pose.position.z, current_pose.pose.position.z);
 
+            // Mulai pindahin mendekati posisi x,y => 0
             cmd_pub.publish(vel);
-            // ROS_INFO("Going Home! | Going to x:%f y:%f", pose.pose.position.x, pose.pose.position.y);
             continue;
         }
 
+        // Mengecek apakah sudah mulai hitung waktu
         if(landing.is_zero())
         {
             landing = ros::Time::now();
@@ -144,11 +147,13 @@ void goLand(ros::Publisher cmd_pub, ros::Rate rate)
             
         cmd_pub.publish(vel);
 
+        // Jika sudah melewati 5 detik maka mulai untuk landing ke z => 0
         if(ros::Time::now() - landing < ros::Duration(5.0))
         {
             continue;
         }
 
+        // Bergerak ke z => 0 jika belum mendekati
         if(!near_equal(current_pose.pose.position.z, 0, 0.3))
         {
             vel.linear.x = pid_x.calculate(current_pose.pose.position.x, current_pose.pose.position.x);
@@ -159,6 +164,7 @@ void goLand(ros::Publisher cmd_pub, ros::Rate rate)
             // ROS_INFO("Going Home! | Going to z:%f", pose.pose.position.z);
             continue;
         } else {
+            // Jika sudah mendekati titik z =>0 maka sudah bisa dianggap landed
             landed = true;
         }
     }
@@ -174,19 +180,24 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, r
     bool centering = false;
     bool centered = false;
 
+    // Looping hingga semua misi sukses
     while(ros::ok() && missionsDone != totalMissions)
     {
         ros::spinOnce();
         rate.sleep();
 
+        // Looping setiap misi, dimulai dari misi setelah misi terakhir yang sukses
         for(int x = missionsDone; x < totalMissions; x++)
         {
+
+            // Jika misi yang dicek sekarang belum selesai
             if(!missions[x].done)
             {
                 vel.linear.x = 0;
                 vel.linear.y = 0;
                 vel.linear.z = 0;
 
+                // Jika belum mode centering, maka gerak ke rough estimation center of pilar
                 if(!centering)
                 {
                     vel.linear.x = pid_x.calculate(missions[x].x, current_pose.pose.position.x);
@@ -194,10 +205,12 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, r
                     vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
                 }
 
+                // Jika berada 2 satuan dari titik estimasi, maka mulai mode centering
                 if(!centering && near_equal(current_pose.pose.position.x, missions[x].x, 2) && near_equal(current_pose.pose.position.y, missions[x].y, 2))
                 {
                     centering = true;
 
+                    // Mulai scanning, dengan mem-publish nilai hsv
                     if(!missions[x].scanning)
                     {
                         std_msgs::Bool scan;
@@ -218,41 +231,49 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, r
                     }
                 }
 
+                // Jika suatu dan beberapa hal, drone keluar 3 satuan dari radius titik estimasi, maka mulai balik lagi ke titik estimasi
                 if(!near_equal(current_pose.pose.position.x, missions[x].x, 3) && !near_equal(current_pose.pose.position.y, missions[x].y, 3))
                 {
                     centering = false;
                 }
 
+                // Jika dalam mode centering dan belum mendekati "centered"
                 if(centering && !centered)
                 {
-                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 100);
-                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 100);
+                    // Gerakin drone dengan smooth, Konstan di sini arbitrary, makin besar makin pelan
+                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 120);
+                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 120);
                     vel.linear.x = pid_center_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
                     vel.linear.y = pid_center_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
                     vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
 
-                    if(iscentered.data)
+                    // Jika jarak dari titika pusat sekitar 15 satuan, maka bisa dikatakan mendekati "centered"
+                    if(distance_to_center.position.z <= 15)
                     {
                         centered = true;
                         continue;
                     }
-
                     ROS_INFO("Centering x: %f y:%f vel x:%f, y:%f", current_pose.pose.position.x - center_pos.position.x, current_pose.pose.position.y - center_pos.position.y, center_x, center_y);
                 } else if(centered) {
-                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 50);
-                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 50);
+
+                    // Sudah mendekati "centered" jadi dibutuhkan gerakan yang lebih cepat karena jarak yang sudah sangat kecil, konstan di sini arbitrary
+                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 60);
+                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 60);
                     vel.linear.x = pid_center_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
                     vel.linear.y = pid_center_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
                     vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
 
+                    // Mulai perhitungan timer
                     if(misi.is_zero())
                     {
                         misi = ros::Time::now();
                         ROS_INFO("Sampai di tujuan");
                     }
 
+                    // Jika sudah lima detik
                     if(ros::Time::now() - misi > ros::Duration(5))
                     {
+                        // Lanjutkan misi selanjutnya
                         ROS_INFO("Sudah 5 detik");
                         missions[x].done = true;
                         missionsDone++;
@@ -278,9 +299,12 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, r
 
 int main(int argc, char **argv)
 {
+    // Inisiasi node
     ros::init(argc, argv, "set_pos_centering_with_pid");
+    // Inisiasi Node Handler
     ros::NodeHandle nh;
 
+    // Kumpulan Subscriber dan Publisher
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
             ("mavros/state", 10, state_cb);
     ros::Subscriber local_pose = nh.subscribe<geometry_msgs::PoseStamped>
@@ -293,14 +317,20 @@ int main(int argc, char **argv)
             ("mavros/set_mode");
     ros::Publisher cmd_pub = nh.advertise<geometry_msgs::Twist>
             ("mavros/setpoint_velocity/cmd_vel_unstamped", 10);
+    
+    // Publisher untuk mengirimkan Hue, Saturation, Value yang akan discan
     ros::Publisher hsv_pub = nh.advertise<std_msgs::Int32MultiArray>
             ("hsv_pub", 10);
+
+    // Publisher untuk memilai scan
     ros::Publisher scan_pub = nh.advertise<std_msgs::Bool>
             ("scan_pub", 10);
+
+    // Subscriber yang berisi nilai normalized vector
     ros::Subscriber center_pub = nh.subscribe<geometry_msgs::Pose>
             ("center_pub", 10, center_pub_cb);
-    ros::Subscriber iscentered_pub = nh.subscribe<std_msgs::Bool>
-            ("iscentered_pub", 10, iscentered_pub_cb);
+
+    // Subscriber yang memberikan angka distance ke titik pusat x dan y, sedangkan z merupakan jarak antara koordinat pusat blob degan koordinat pusat kamera
     ros::Subscriber distance_pub = nh.subscribe<geometry_msgs::Pose>
             ("distance_pub", 10, distance_pub_cb);
 
@@ -314,10 +344,11 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
+    // Mengirimkan beberapa setpoint awal untuk keep-up dengan rate
     geometry_msgs::PoseStamped pose;
-    pose.pose.position.x = 0;
-    pose.pose.position.y = 0;
-    pose.pose.position.z = 0;
+    pose.pose.position.x = current_pose.pose.position.x;
+    pose.pose.position.y = current_pose.pose.position.y;
+    pose.pose.position.z = current_pose.pose.position.z;
 
     //send a few setpoints before starting
     ROS_INFO("Sending few setpoints before start");
@@ -327,16 +358,22 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
+    // Set mode ke offboard nantinya
     mavros_msgs::SetMode offb_set_mode;
     offb_set_mode.request.custom_mode = "OFFBOARD";
 
+    // Set arming nantinya
     mavros_msgs::CommandBool arm_cmd;
     arm_cmd.request.value = true;
 
+    // Menyimpan kapan terakhir request, digunakan saat arming dan offboard saja
     ros::Time last_request = ros::Time::now();
 
+    // Menyimpan status arming
     bool armed = false;
     ROS_INFO("Starting");
+
+    // Looping hingga armed
     while(ros::ok() && !armed){
         if( current_state.mode != "OFFBOARD" &&
             (ros::Time::now() - last_request > ros::Duration(5.0))){
@@ -363,12 +400,15 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
+    // Mulai take off
     ROS_INFO("Taking Off! | Break a leg!");
     goTakeOff(cmd_pub, rate);
 
+    // Mulai jalankan misi
     ROS_INFO("Starting Mission! | Finger crossed!");
     goMission(cmd_pub, rate, hsv_pub, scan_pub);
 
+    // Mulai kembali ke titik awal
     ROS_INFO("Going Home! | Yay");
     goLand(cmd_pub, rate);
 

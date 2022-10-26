@@ -6,13 +6,18 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <std_msgs/Int32MultiArray.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Float32.h>
 #include <math.h>
 #include "../include/belajar_ros/pid.hpp"
+
+const double EULER = 2.71828182845904523536;
 
 struct mission {
     double x;
@@ -24,23 +29,43 @@ struct mission {
     int HMax;
     int SMax;
     int VMax;
-    bool published;
+    bool scanning;
 };
 
 struct mission missions[4] = {
-    {-4.3, 0, false, 0, 125, 0, 50, 145, 255, false}, // Pilar Biru => x, y, done, hmin, smin, vmin, hmax, smax, vmax, published
-    {4.65, -11.2, false, 0, 125, 0, 50, 145, 255, false}, // Pilar Hijau
-    {16.2, .1, false, 178, 205, 0, 180, 255, 255, false}, // Pilar Merah
-    {5, 11.6, false, 178, 205, 0, 180, 255, 255, false} // Pilar Ungu
+    {-4.3, 0, false, 127, 180, 0, 144, 255, 255, false}, // Pilar Biru => x, y, done, hmin, smin, vmin, hmax, smax, vmax, scanning
+    {4.65, -11.2, false, 45, 110, 0, 50, 255, 255, false}, // Pilar Hijau
+    {16.2, .1, false, 177, 190, 0, 179, 255, 255, false}, // Pilar Merah
+    {5, 11.6, false, 140, 190, 0, 165, 255, 255, false} // Pilar Ungu
 };
 
 PID pid_x(0.03125, 1, -1, 0.5, 0.001, 0.001);
 PID pid_y(0.03125, 1, -1, 0.5, 0.001, 0.001);
 PID pid_z(0.03125, 1, -1, 0.5, 0.001, 0.001); 
 
+PID pid_center_x(0.03125, 1, -1, 0.65, 0.001, 0.05);
+PID pid_center_y(0.03125, 1, -1, 0.65, 0.001, 0.05);
+PID pid_smooth_x(0.03125, 1, -1, 0.8, 0.001, 0.05);
+PID pid_smooth_y(0.03125, 1, -1, 0.8, 0.001, 0.05);
+
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
+}
+
+geometry_msgs::Pose center_pos;
+void center_pub_cb(const geometry_msgs::Pose::ConstPtr& msg){
+    center_pos = *msg;
+}
+
+std_msgs::Float32 distance_to_center;
+void distance_pub_cb(const std_msgs::Float32::ConstPtr& msg){
+    distance_to_center = *msg;
+}
+
+std_msgs::Bool iscentered;
+void iscentered_pub_cb(const std_msgs::Bool::ConstPtr& msg){
+    iscentered = *msg;
 }
 
 geometry_msgs::PoseStamped current_pose;
@@ -102,7 +127,7 @@ void goLand(ros::Publisher cmd_pub, ros::Rate rate)
     {
         ros::spinOnce();
         rate.sleep();
-        if(!near_equal(current_pose.pose.position.x, 0, 0.15) || !near_equal(current_pose.pose.position.y, 0, 0.15))
+        if(!near_equal(current_pose.pose.position.x, 0, 0.2) || !near_equal(current_pose.pose.position.y, 0, 0.2))
         {
             vel.linear.x = pid_x.calculate(0, current_pose.pose.position.x);
             vel.linear.y = pid_y.calculate(0, current_pose.pose.position.y);
@@ -126,7 +151,7 @@ void goLand(ros::Publisher cmd_pub, ros::Rate rate)
             continue;
         }
 
-        if(!near_equal(current_pose.pose.position.z, 0, 0.15))
+        if(!near_equal(current_pose.pose.position.z, 0, 0.2))
         {
             vel.linear.x = pid_x.calculate(current_pose.pose.position.x, current_pose.pose.position.x);
             vel.linear.y = pid_y.calculate(current_pose.pose.position.y, current_pose.pose.position.y);
@@ -141,13 +166,15 @@ void goLand(ros::Publisher cmd_pub, ros::Rate rate)
     }
 }
 
-void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub)
+void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, ros::Publisher scan_pub)
 {
     ros::Time empty;
     ros::Time misi;
     geometry_msgs::Twist vel;
     int missionsDone = 0;
     int totalMissions = (sizeof(missions) / sizeof(missions[0]));
+    bool centering = false;
+    bool centered = false;
 
     while(ros::ok() && missionsDone != totalMissions)
     {
@@ -158,27 +185,71 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub)
         {
             if(!missions[x].done)
             {
-                if(!missions[x].published)
+                vel.linear.x = 0;
+                vel.linear.y = 0;
+                vel.linear.z = 0;
+
+                if(!centering)
                 {
-                    std_msgs::Int32MultiArray hsv_value;
-                    hsv_value.data.resize(6);
-                    hsv_value.data[0] = missions[x].HMin;
-                    hsv_value.data[1] = missions[x].SMin;
-                    hsv_value.data[2] = missions[x].VMin;
-                    hsv_value.data[3] = missions[x].HMax;
-                    hsv_value.data[4] = missions[x].SMax;
-                    hsv_value.data[5] = missions[x].VMax;
-                    hsv_pub.publish(hsv_value);
-                    ROS_INFO("Published HSV!");
-                    missions[x].published = true;
+                    vel.linear.x = pid_x.calculate(missions[x].x, current_pose.pose.position.x);
+                    vel.linear.y = pid_y.calculate(missions[x].y, current_pose.pose.position.y);
+                    vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
                 }
 
-                vel.linear.x = pid_x.calculate(missions[x].x, current_pose.pose.position.x);
-                vel.linear.y = pid_y.calculate(missions[x].y, current_pose.pose.position.y);
-                vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
-
-                if(near_equal(current_pose.pose.position.x, missions[x].x, 0.2) && near_equal(current_pose.pose.position.y, missions[x].y, 0.2))
+                if(!centering && near_equal(current_pose.pose.position.x, missions[x].x, 2) && near_equal(current_pose.pose.position.y, missions[x].y, 2))
                 {
+                    centering = true;
+
+                    if(!missions[x].scanning)
+                    {
+                        std_msgs::Bool scan;
+                        scan.data = true;
+                        missions[x].scanning = true;
+                        scan_pub.publish(scan);
+                        std_msgs::Int32MultiArray hsv_value;
+                        hsv_value.data.resize(6);
+                        hsv_value.data[0] = missions[x].HMin;
+                        hsv_value.data[1] = missions[x].SMin;
+                        hsv_value.data[2] = missions[x].VMin;
+                        hsv_value.data[3] = missions[x].HMax;
+                        hsv_value.data[4] = missions[x].SMax;
+                        hsv_value.data[5] = missions[x].VMax;
+                        hsv_pub.publish(hsv_value);
+                        ROS_INFO("Published HSV!");
+                        continue;
+                    }
+                }
+
+                if(!near_equal(current_pose.pose.position.x, missions[x].x, 3) && !near_equal(current_pose.pose.position.y, missions[x].y, 3))
+                {
+                    centering = false;
+                }
+
+                if(centering && !centered)
+                {
+                    float center_x = (center_pos.position.y * distance_to_center.data / 100);
+                    float center_y = (center_pos.position.x * distance_to_center.data / 100);
+                    vel.linear.x = pid_center_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
+                    vel.linear.y = pid_center_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
+                    vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
+
+                    if(iscentered.data)
+                    {
+                        centered = true;
+                        continue;
+                    }
+
+                    ROS_INFO("Centering x: %f y:%f vel x:%f, y:%f", current_pose.pose.position.x - center_pos.position.x, current_pose.pose.position.y - center_pos.position.y, center_x, center_y);
+                } else if(centered) {
+                    if(!iscentered.data)
+                    {
+                        float center_x = (center_pos.position.y * distance_to_center.data / 100);
+                        float center_y = (center_pos.position.x * distance_to_center.data / 100);
+                        vel.linear.x = pid_smooth_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
+                        vel.linear.y = pid_smooth_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
+                        vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
+                    }
+                    
                     if(misi.is_zero())
                     {
                         misi = ros::Time::now();
@@ -187,9 +258,18 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub)
 
                     if(ros::Time::now() - misi > ros::Duration(5))
                     {
+                        ROS_INFO("Sudah 5 detik");
                         missions[x].done = true;
                         missionsDone++;
                         misi = empty;
+                        
+
+                        std_msgs::Bool scan;
+                        scan.data = false;
+                        scan_pub.publish(scan);
+
+                        centered = false;
+                        centering = false;
                         ROS_INFO("WP done : %d / %d", missionsDone, totalMissions);
                     }
                 }
@@ -220,6 +300,14 @@ int main(int argc, char **argv)
             ("mavros/setpoint_velocity/cmd_vel_unstamped", 10);
     ros::Publisher hsv_pub = nh.advertise<std_msgs::Int32MultiArray>
             ("hsv_pub", 10);
+    ros::Publisher scan_pub = nh.advertise<std_msgs::Bool>
+            ("scan_pub", 10);
+    ros::Subscriber center_pub = nh.subscribe<geometry_msgs::Pose>
+            ("center_pub", 10, center_pub_cb);
+    ros::Subscriber iscentered_pub = nh.subscribe<std_msgs::Bool>
+            ("iscentered_pub", 10, iscentered_pub_cb);
+    ros::Subscriber distance_pub = nh.subscribe<std_msgs::Float32>
+            ("distance_pub", 10, distance_pub_cb);
 
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
@@ -284,7 +372,7 @@ int main(int argc, char **argv)
     goTakeOff(cmd_pub, rate);
 
     ROS_INFO("Starting Mission! | Finger crossed!");
-    goMission(cmd_pub, rate, hsv_pub);
+    goMission(cmd_pub, rate, hsv_pub, scan_pub);
 
     ROS_INFO("Going Home! | Yay");
     goLand(cmd_pub, rate);

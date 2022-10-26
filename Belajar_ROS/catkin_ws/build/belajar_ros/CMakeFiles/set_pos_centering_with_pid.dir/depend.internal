@@ -73,6 +73,8 @@ belajar_ros/CMakeFiles/set_pos_centering_with_pid.dir/src/set_pos_centering_with
  /opt/ros/noetic/include/ros/wall_timer.h
  /opt/ros/noetic/include/ros/wall_timer_options.h
  /opt/ros/noetic/include/rosconsole/macros_generated.h
+ /opt/ros/noetic/include/std_msgs/Bool.h
+ /opt/ros/noetic/include/std_msgs/Float32.h
  /opt/ros/noetic/include/std_msgs/Header.h
  /opt/ros/noetic/include/std_msgs/Int32MultiArray.h
  /opt/ros/noetic/include/std_msgs/MultiArrayDimension.h

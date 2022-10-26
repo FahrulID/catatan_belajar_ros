@@ -1,0 +1,14 @@
+<launch>
+  <node
+    pkg="belajar_ros"
+    type="set_pos_centering_with_pid"
+    name="set_pos_centering_with_pid"
+    output="screen"
+  />
+  <node
+    pkg="belajar_vision"
+    type="cv_all_in_one.py"
+    name="cv_all_in_one"
+    output="screen"
+  />
+</launch>

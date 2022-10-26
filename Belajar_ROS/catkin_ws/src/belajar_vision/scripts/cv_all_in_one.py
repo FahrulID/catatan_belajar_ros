@@ -8,10 +8,14 @@
 # Import the necessary libraries
 import rospy # Python library for ROS
 from std_msgs.msg import Int32MultiArray
+from std_msgs.msg import Bool
+from std_msgs.msg import Float32
+from geometry_msgs.msg import Pose
 from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 import cv2 # OpenCV library
 import gi
 import numpy as np
+import math
 
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
@@ -160,6 +164,12 @@ def hsv_sub(val):
     cv2.setTrackbarPos('VMax', 'HSV', val.data[5])
     rospy.loginfo("HSV subscribed")
 
+scanning = False
+def scan(val):
+    global scanning 
+    scanning = val
+    # rospy.loginfo("Start Scanning" if scanning else "Stop Scanning")
+
 
 def run():
  
@@ -172,6 +182,10 @@ def run():
     # numbers are added to the end of the name.
     rospy.init_node('cv_all_in_one', anonymous=True)
     rospy.Subscriber('hsv_pub', Int32MultiArray, hsv_sub)
+    rospy.Subscriber('scan_pub', Bool, scan)
+    center_pub = rospy.Publisher('center_pub', Pose, queue_size=10)
+    distance_pub = rospy.Publisher('distance_pub', Float32, queue_size=10)
+    iscentered_pub = rospy.Publisher('iscentered_pub', Bool, queue_size=10)
         
     # Go through the loop 10 times per second
     rate = rospy.Rate(60) # 10hz
@@ -183,9 +197,10 @@ def run():
     cap = Video()
 
     cv2.namedWindow("HSV")
-    cv2.resizeWindow("HSV", 400, 300)
+    cv2.resizeWindow("HSV", 400, 200)
 
     cv2.namedWindow('Live Leak (ಠಿ ͟ʖ ͡ಠ)', cv2.WINDOW_NORMAL)
+    cv2.namedWindow('Deep Web ⊙д⊙', cv2.WINDOW_NORMAL)
 
     cv2.createTrackbar('HMin', 'HSV', 0, 179, nothing)
     cv2.createTrackbar('SMin', 'HSV', 0, 255, nothing)
@@ -220,19 +235,36 @@ def run():
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, lower, upper)
         result = cv2.bitwise_and(frame, frame, mask=mask)
-        cv2.circle(result, (int(w/2), int(h/2)), 15, (0, 255, 0), 2)
-
-        # calculate moments of binary image]
-        gray_image = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-        ret,thresh = cv2.threshold(gray_image,127,255,0)
+        (hChannel, sChannel, vChannel) = cv2.split(result)
+        ret,thresh = cv2.threshold(vChannel,127,255,0)
         M = cv2.moments(thresh)
-        
-        # calculate x,y coordinate of center
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        cv2.circle(result, (cX, cY), 5, (255, 255, 255), -1)
-        
-        cv2.imshow("Live Leak (ಠಿ ͟ʖ ͡ಠ)", result)
+
+        centered = False
+        if(ret and scanning):
+            # calculate x,y coordinate of center
+            if(M["m00"] != 0):
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                d = math.sqrt((cX - w/2) ** 2 + (cY - h/2) ** 2)
+                centered = (d <= 5)
+                cv2.circle(result, (cX, cY), 5, (255, 255, 255), -1)
+                cv2.circle(frame, (cX, cY), 5, (255, 255, 255), -1)
+                center = Pose()
+                center.position.x = (cX - w/2) / abs((cX - w/2)) if (cX - w/2 != 0) else cX - w/2
+                center.position.y = (cY - h/2) / abs((cY - h/2)) if (cY - h/2 != 0) else cY - h/2
+                center_pub.publish(center)
+                distance_pub.publish(d)
+                cv2.line(result, (int(w/2), int(h/2)), (int(cX), int(cY)), (127, 255, 0), 1)
+                cv2.line(frame, (int(w/2), int(h/2)), (int(cX), int(cY)), (127, 255, 0), 1)
+
+        cv2.circle(result, (int(w/2), int(h/2)), 10, (0, 255, 0), 2)
+        cv2.circle(frame, (int(w/2), int(h/2)), 10, (0, 255, 0), 2)
+        iscentered_pub.publish(centered)   
+
+        # 320 x 240 frame size
+
+        cv2.imshow("Live Leak (ಠಿ ͟ʖ ͡ಠ)", frame)
+        cv2.imshow("Deep Web ⊙д⊙", result)
         cv2.waitKey(1)
                 
         # Sleep just enough to maintain the desired rate

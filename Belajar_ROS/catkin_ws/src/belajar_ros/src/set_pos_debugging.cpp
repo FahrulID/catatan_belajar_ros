@@ -10,21 +10,9 @@
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <math.h>
 #include "../include/belajar_ros/pid.hpp"
-
-struct mission {
-    double x;
-    double y;
-    bool done;
-};
-
-struct mission missions[4] = {
-    {-4.3, 0, false}, // Pilar Biru
-    // {4.65, -11.2, false}, // Pilar Hijau
-    // {16.2, .1, false}, // Pilar Merah
-    // {5, 11.6, false} // Pilar Ungu
-};
 
 PID pid_x(0.03125, 1, -1, 0.5, 0.001, 0.001);
 PID pid_y(0.03125, 1, -1, 0.5, 0.001, 0.001);
@@ -56,15 +44,60 @@ void goTakeOff(ros::Publisher cmd_pub, ros::Rate rate)
     {
         ros::spinOnce();
         rate.sleep();
-        vel.linear.z = pid_z.calculate(5, current_pose.pose.position.z);
+
+        if(!near_equal(current_pose.pose.position.z, 6, 0.2))
+        {
+            vel.linear.x = pid_x.calculate(current_pose.pose.position.x, current_pose.pose.position.x);
+            vel.linear.y = pid_y.calculate(current_pose.pose.position.y, current_pose.pose.position.y);
+            vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
+
+            cmd_pub.publish(vel);
+            continue;
+        }
+
+        if(takingoff.is_zero())
+        {
+            takingoff = ros::Time::now();
+            continue;
+        }
 
         cmd_pub.publish(vel);
+
+        if(ros::Time::now() - takingoff < ros::Duration(5.0))
+        {
+            continue;
+        }
+
+        tookOff = true;
     }
 }
 
-int main(int argc, char **argv)
+void goMission(ros::Publisher cmd_pub, ros::Rate rate, float position[3])
 {
-    ros::init(argc, argv, "set_pos_centering_with_pid");
+    geometry_msgs::Twist vel;
+
+    while(ros::ok())
+    {
+        vel.linear.x = pid_x.calculate(position[0], current_pose.pose.position.x);
+        vel.linear.y = pid_y.calculate(position[1], current_pose.pose.position.y);
+        vel.linear.z = pid_z.calculate(position[2], current_pose.pose.position.z);
+        cmd_pub.publish(vel);
+        ros::spinOnce();
+        rate.sleep();
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    ros::init(argc, argv, "set_pos_debugging");
+    ros::NodeHandle param("~");
+    float posX;
+    float posY;
+    float posZ;
+    param.getParam("x", posX);
+    param.getParam("y", posY);
+    param.getParam("z", posZ);
+
     ros::NodeHandle nh;
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
@@ -141,5 +174,9 @@ int main(int argc, char **argv)
 
     ROS_INFO("Taking Off! | Break a leg!");
     goTakeOff(cmd_pub, rate);
+
+    float position[3] = {posX, posY, posZ};
+    ROS_INFO("Starting Debugging! | Happy Debugging! x:%f y:%f z:%f", posX, posY, posZ);
+    goMission(cmd_pub, rate, position);
     return 0;
 }

@@ -74,5 +74,8 @@ belajar_ros/CMakeFiles/set_pos_debugging.dir/src/set_pos_debugging.cpp.o
  /opt/ros/noetic/include/ros/wall_timer_options.h
  /opt/ros/noetic/include/rosconsole/macros_generated.h
  /opt/ros/noetic/include/std_msgs/Header.h
+ /opt/ros/noetic/include/std_msgs/Int32MultiArray.h
+ /opt/ros/noetic/include/std_msgs/MultiArrayDimension.h
+ /opt/ros/noetic/include/std_msgs/MultiArrayLayout.h
  /opt/ros/noetic/include/xmlrpcpp/XmlRpcDecl.h
  /opt/ros/noetic/include/xmlrpcpp/XmlRpcValue.h

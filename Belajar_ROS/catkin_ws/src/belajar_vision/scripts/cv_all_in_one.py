@@ -167,6 +167,9 @@ def hsv_sub(val):
     cv2.setTrackbarPos('VMax', 'HSV', val.data[5])
     rospy.loginfo("HSV subscribed")
 
+def clamp(value):
+    return max(min(value, 1), -1)
+
 # Callback Scanning subscriber
 scanning = False
 def scan(val):
@@ -262,8 +265,10 @@ def run():
 
                 # Inisialisasi untuk publisher center_pub, dimana akan berisikan normalized vector
                 center = Pose()
-                center.position.x = (cX - w/2) / abs((cX - w/2)) if (cX - w/2 != 0) else cX - w/2
-                center.position.y = (cY - h/2) / abs((cY - h/2)) if (cY - h/2 != 0) else cY - h/2
+                # center.position.x = (cX - w/2) / abs((cX - w/2)) if (cX - w/2 != 0) else cX - w/2
+                # center.position.y = (cY - h/2) / abs((cY - h/2)) if (cY - h/2 != 0) else cY - h/2
+                center.position.x = clamp(cX - w/2)
+                center.position.y = clamp(cY - h/2)
                 center_pub.publish(center)
 
                 # Inisialisasi publisher yang akan berisikan jarak ke titik center, dalam axis x, y serta jarak antar dua titik

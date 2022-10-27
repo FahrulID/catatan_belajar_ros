@@ -5,6 +5,7 @@
  */
 
 #include <ros/ros.h>
+#include <tf/tf.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
@@ -16,6 +17,8 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <math.h>
 #include "../include/belajar_ros/pid.hpp"
+
+#define pi 3.14159265358979323846
 
 const double EULER = 2.71828182845904523536;
 
@@ -186,6 +189,18 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, r
         ros::spinOnce();
         rate.sleep();
 
+        // In Case butuh angle
+        // tf::Quaternion q(
+        //     current_pose.pose.orientation.x,
+        //     current_pose.pose.orientation.y,
+        //     current_pose.pose.orientation.z,
+        //     current_pose.pose.orientation.w);
+        // tf::Matrix3x3 m(q);
+        // double roll, pitch, yaw;
+        // m.getRPY(roll, pitch, yaw);
+        // double angle = yaw * 180 / pi;
+        // int reverseX = (current_pose <= math.pi / 2)
+
         // Looping setiap misi, dimulai dari misi setelah misi terakhir yang sukses
         for(int x = missionsDone; x < totalMissions; x++)
         {
@@ -241,24 +256,27 @@ void goMission(ros::Publisher cmd_pub, ros::Rate rate, ros::Publisher hsv_pub, r
                 if(centering && !centered)
                 {
                     // Gerakin drone dengan smooth, Konstan di sini arbitrary, makin besar makin pelan
-                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 120);
-                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 120);
-                    vel.linear.x = pid_center_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
-                    vel.linear.y = pid_center_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
-                    vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
-
-                    // Jika jarak dari titika pusat sekitar 15 satuan, maka bisa dikatakan mendekati "centered"
-                    if(distance_to_center.position.z <= 15)
+                    if(distance_to_center.position.z != 0)
                     {
-                        centered = true;
-                        continue;
+                        double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 120); // konstan, klo * makin cepat, / makin lambat
+                        double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 120); // konstan, klo * makin cepat, / makin lambat
+                        vel.linear.x = pid_center_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
+                        vel.linear.y = pid_center_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
+                        vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);
+
+                        // Jika jarak dari titika pusat sekitar 15 satuan, maka bisa dikatakan mendekati "centered"
+                        if(distance_to_center.position.z <= 15)
+                        {
+                            centered = true;
+                            continue;
+                        }
+                        ROS_INFO("Centering x: %f y:%f vel x:%f, y:%f", current_pose.pose.position.x - center_pos.position.x, current_pose.pose.position.y - center_pos.position.y, center_x, center_y);
                     }
-                    ROS_INFO("Centering x: %f y:%f vel x:%f, y:%f", current_pose.pose.position.x - center_pos.position.x, current_pose.pose.position.y - center_pos.position.y, center_x, center_y);
                 } else if(centered) {
 
                     // Sudah mendekati "centered" jadi dibutuhkan gerakan yang lebih cepat karena jarak yang sudah sangat kecil, konstan di sini arbitrary
-                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 60);
-                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 60);
+                    double center_x = (center_pos.position.y * fabs(distance_to_center.position.y) / 55);
+                    double center_y = (center_pos.position.x * fabs(distance_to_center.position.x) / 55);
                     vel.linear.x = pid_center_x.calculate(current_pose.pose.position.x - center_x, current_pose.pose.position.x);
                     vel.linear.y = pid_center_y.calculate(current_pose.pose.position.y - center_y, current_pose.pose.position.y);
                     vel.linear.z = pid_z.calculate(6, current_pose.pose.position.z);

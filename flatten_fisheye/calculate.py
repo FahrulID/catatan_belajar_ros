@@ -2,6 +2,13 @@
 import cv2
 import numpy as np
 import glob
+import os
+
+folder_name = "calibration"
+# Check for folder
+if(not os.path.isdir(folder_name)):
+    os.mkdir(os.path.join(os.getcwd(), folder_name))
+
 
 # Checkboard dimensions
 CHECKERBOARD = (10,7)
@@ -16,7 +23,7 @@ imgpoints = [] # 2d points in image plane.
 
 ### read images and for each image:
 
-images = glob.glob('./calibration/*.jpg')
+images = glob.glob('./' + folder_name + '/*.jpg')
 for fname in images:
     img = cv2.imread(fname)
     if _img_shape == None:
@@ -29,8 +36,15 @@ for fname in images:
     # If found, add object points, image points (after refining them)
     if ret == True:
         objpoints.append(objp)
-        cv2.cornerSubPix(gray,corners,(3,3),(-1,-1),subpix_criteria)
-        imgpoints.append(corners)
+
+        # cv2.cornerSubPix(gray,corners,(3,3),(-1,-1),subpix_criteria)
+        # imgpoints.append(corners)
+
+        corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), subpix_criteria)
+        imgpoints.append(corners2)
+
+        img = cv2.drawChessboardCorners(img, CHECKERBOARD, corners2, ret)
+
     cv2.imshow('img',img)
     cv2.waitKey(0)
 

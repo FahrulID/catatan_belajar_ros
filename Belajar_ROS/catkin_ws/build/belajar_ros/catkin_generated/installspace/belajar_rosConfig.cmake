@@ -67,14 +67,14 @@ set(belajar_ros_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("FALSE" STREQUAL "TRUE")
-  set(belajar_ros_SOURCE_PREFIX /home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/src/belajar_ros)
-  set(belajar_ros_DEVEL_PREFIX /home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/devel)
+  set(belajar_ros_SOURCE_PREFIX /home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/src/belajar_ros)
+  set(belajar_ros_DEVEL_PREFIX /home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/devel)
   set(belajar_ros_INSTALL_PREFIX "")
   set(belajar_ros_PREFIX ${belajar_ros_DEVEL_PREFIX})
 else()
   set(belajar_ros_SOURCE_PREFIX "")
   set(belajar_ros_DEVEL_PREFIX "")
-  set(belajar_ros_INSTALL_PREFIX /home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/install)
+  set(belajar_ros_INSTALL_PREFIX /home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/install)
   set(belajar_ros_PREFIX ${belajar_ros_INSTALL_PREFIX})
 endif()
 
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/install/lib;/home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/devel/lib;/opt/ros/noetic/lib)
+    foreach(path /home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/install/lib;/home/fahrul/firaair_ws/devel/lib;/home/fahrul/catkin_ws/devel/lib;/opt/ros/noetic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)

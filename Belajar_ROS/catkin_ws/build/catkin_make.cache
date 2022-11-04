@@ -1,2 +1,2 @@
 belajar_ros:belajar_vision
--DCATKIN_DEVEL_PREFIX=/home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/install -G Unix Makefiles
+-DCATKIN_DEVEL_PREFIX=/home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/install -G Unix Makefiles

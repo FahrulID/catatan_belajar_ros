@@ -1,4 +1,4 @@
-prefix=/home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/install
+prefix=/home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/install
 
 Name: belajar_ros
 Description: Description of belajar_ros

@@ -7,4 +7,8 @@
 # new environment variables
 
 # modified environment variables
-export PWD='/home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/build'
+export CMAKE_PREFIX_PATH="/home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/devel:$CMAKE_PREFIX_PATH"
+export LD_LIBRARY_PATH="/home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/devel/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="/home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/devel/lib/pkgconfig:$PKG_CONFIG_PATH"
+export PWD='/home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/build'
+export ROS_PACKAGE_PATH="/home/fahrul/Desktop/Projects/Bayucaraka/Belajar_ROS/catkin_ws/src:/home/fahrul/Desktop/Projects/Bayucaraka/Catatan_Belajar_Ros/Belajar_ROS/catkin_ws/src:$ROS_PACKAGE_PATH"

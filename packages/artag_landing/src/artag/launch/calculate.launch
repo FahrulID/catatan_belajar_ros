@@ -1,0 +1,10 @@
+<launch>
+  <node
+    pkg="artag"
+    type="calculate.py"
+    name="calculate"
+    output="screen"
+  >
+    <param name="directory" type="string" value="$(find artag)/calibration/"/>
+  </node>
+</launch>

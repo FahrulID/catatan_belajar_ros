@@ -1,0 +1,11 @@
+<launch>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
+  <node
+    pkg="artag"
+    type="capture.py"
+    name="capture"
+    output="screen"
+  >
+    <param name="directory" type="string" value="$(find artag)/calibration/"/>
+  </node>
+</launch>

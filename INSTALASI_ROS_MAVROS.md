@@ -33,6 +33,13 @@ wstool init src
 sudo apt-get install python-catkin-tools python-rosinstall-generator -y
 ```
 
+Known error :
+
+* E: Package 'python-catkin-tools' has no installation candidate
+```sh
+sudo apt install python3-catkin-tools python3-osrf-pycommon
+```
+
 ### 1.4.1 First time using wstool
 
 ```sh

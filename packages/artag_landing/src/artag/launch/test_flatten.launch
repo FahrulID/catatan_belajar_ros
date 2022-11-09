@@ -1,0 +1,9 @@
+<launch>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
+  <node
+    pkg="artag"
+    type="test_flatten.py"
+    name="test_flatten"
+    output="screen"
+  />
+</launch>

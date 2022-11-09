@@ -1,0 +1,8 @@
+prefix=/home/fahrul/Desktop/Projects/Bayucaraka/artag_landing/devel
+
+Name: artag
+Description: Description of artag
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

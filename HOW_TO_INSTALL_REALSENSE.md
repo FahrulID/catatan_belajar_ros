@@ -87,6 +87,13 @@ catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release
 catkin_make install
 ```
 
+Known error :
+
+* Could not find a package configuration file provided by "ddynamic_reconfigure" with any of the following names:
+```sh
+sudo apt-get install ros-$ROS_DISTRO-ddynamic-reconfigure
+```
+
 ## 2.4 Sourcing ke ~/.bashrc
 
 * Note : ingat mengganti `realsense_ws` bila di-custom
